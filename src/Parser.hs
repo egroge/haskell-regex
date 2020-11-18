@@ -78,8 +78,8 @@ parse p input = case runParser p input of
   Just (res, "") -> Just res
   _ -> Nothing
 
-anyCharButA :: Char -> Parser Atom
-anyCharButA c = C <$> anyCharBut c
+anyCharButA :: [Char] -> Parser Atom
+anyCharButA cs = C <$> anyCharBut cs
 
 anyCharA :: Parser Atom
 anyCharA = C <$> anyChar
@@ -107,11 +107,11 @@ parseUnrestricted :: Parser CharClass
 parseUnrestricted = char '.' $> Unrestricted
 
 parseClassMember :: Parser CharClass
-parseClassMember = parseRange <|> parseMetaChar <|> Restricted <$> ((: []) <$> anyCharBut '[')
+parseClassMember = parseRange <|> parseMetaChar <|> Restricted <$> ((: []) <$> anyCharBut "[]")
 
 parseCharacterClass :: Parser Atom
 parseCharacterClass =
-  CClass False <$> parseUnrestricted
+        CClass False <$> parseUnrestricted
     <|> CClass False <$> parseMetaChar
     <|> CClass False <$> parseRange
     <|> char '[' *> char '^' *> (combine True <$> many parseClassMember) <* char ']'
@@ -121,7 +121,7 @@ parseCharacterClass =
       CClass inverted (foldl merge (Restricted []) ms)
 
     -- Cannot get unrestricted when creating a character class
-    merge (Restricted cs) ((Restricted cs')) =
+    merge (Restricted cs) (Restricted cs') =
       Restricted $ nub (cs' ++ cs)
     merge _ _ =
       undefined
@@ -133,7 +133,14 @@ parseAtom :: Parser Atom
 parseAtom = parseCharacterClass <|> char '(' *> (Sub <$> parseExpr) <|> anyCharA
 
 parseTerm :: Parser Term
-parseTerm = TOp <$> (parseOp <*> parseAtom) <|> TAtom <$> parseAtom
+parseTerm = TOp <$> appliedOp <|> TAtom <$> parseAtom
+  where
+    appliedOp = do 
+      atom <- parseAtom 
+      op   <- parseOp
+      return (op atom)
+  -- TOp <$> (parseOp <*> parseAtom) <|> TAtom <$> parseAtom
+  
 
 anyChar :: Parser Char
 anyChar =
@@ -147,10 +154,10 @@ parseExpr = char ')' $> [] <|> (:) <$> parseTerm <*> (parseExpr <|> pure [])
 parseRegex :: String -> Maybe Expr
 parseRegex = parse parseExpr
 
-anyCharBut :: Char -> Parser Char
-anyCharBut c = do
-  c' <- anyChar
-  if c == c' then failingParser else return c'
+anyCharBut :: [Char] -> Parser Char
+anyCharBut cs = do
+  c <- anyChar
+  if c `elem` cs then failingParser else return c
 
 char :: Char -> Parser ()
 char c = do
