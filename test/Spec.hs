@@ -42,11 +42,11 @@ parseAtomTest4 = TestCase (assertEqual "parseAtomTest4 failed" expected (parse p
 
 parseAtomTest5 = TestCase (assertEqual "parseAtomTest5 failed" expected (parse parseAtom "(ICL?)"))
   where
-    expected = Just (Sub [TAtom (C 'I'), TAtom (C 'C'), TOp (Optional (C 'L'))])
+    expected = Just (Sub [TAtom (C 'I'), TAtom (C 'C'), TOp (C 'L') Optional])
 
 parseRegexTest = TestCase (assertEqual "parseRegexTest failed" expected (parseRegex "a[0-2]+"))
   where 
-    expected = Just [TAtom (C 'a'), TOp (Plus (CClass False (Restricted "012")))]
+    expected = Just [TAtom (C 'a'), TOp (CClass False (Restricted "012")) Plus]
 
 tests = test [
     parseRangeTest, 
