@@ -1,4 +1,5 @@
-import Parser
+import Parser.Parser
+import Regex
 import Test.HUnit
 
 latin :: [Char]

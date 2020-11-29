@@ -1,15 +1,12 @@
 -- TODO exposing all the internals like this just for testing is bad
-{-# LANGUAGE DeriveFunctor #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE ApplicativeDo #-}
-module 
-Parser (Expr, Term (..), Op (..), Atom (..), CharClass (..), parse, parseRegex, parseRange, parseClassMember, parseCharacterClass, parseAtom, parseTerm) 
-where
+module Regex where
 
 import Control.Applicative
-import Control.Monad.State
+    ( Applicative(liftA2), (<**>), Alternative(many, (<|>)) )
 import Data.Functor
 import Data.List
+import Parser.Parser
 
 -- TODO make CClass have a set not a list
 type Expr = [Term]
@@ -24,66 +21,9 @@ instance Eq CharClass where
   Unrestricted == Unrestricted = True
   Restricted cs == Restricted cs' = sort cs == sort cs'
 
-newtype Parser a = P (StateT (String, Int) Maybe a) deriving (Functor, Applicative, Alternative, Monad, MonadState (String, Int), MonadFail)
-
-runParser :: Parser a -> String -> Maybe (a, (String, Int))
-runParser (P p) s = runStateT p (s, 0)
-
 infixr 4 <:>
 (<:>) :: Applicative f => f a -> f [a] -> f [a]
 (<:>) = liftA2 (:)
-
-parse :: Parser a -> String -> Maybe a
-parse p input = fmap fst (runParser p input)
-
-eof :: Parser ()
-eof = 
-  do [] <- gets fst
-     return ()
-
-satisfy :: (Char -> Bool) -> Parser Char
-satisfy f = 
-  do (input, offset) <- get
-     case input of
-       c:cs | f c -> put (cs, offset + 1) >> return c
-       _          -> empty
-
-anyChar :: Parser Char
-anyChar = satisfy (const True)
-
-pos :: Parser Int
-pos = gets snd
-
-choice :: [Parser a] -> Parser a
-choice = foldr (<|>) empty
-
-oneOf :: [Char] -> Parser Char
-oneOf = choice . map char
-
-noneOf :: [Char] -> Parser Char
-noneOf cs = satisfy (not . flip elem cs)
-
-char :: Char -> Parser Char
-char c = satisfy (== c) -- anyChar >?> (== c)
-
-string :: String -> Parser String
-string = traverse char
-
-branch :: Parser (Either a b) -> Parser (a -> c) -> Parser (b -> c) -> Parser c
-branch b l r =
-  do e <- b
-     case e of
-       Left x -> l <*> pure x
-       Right y -> r <*> pure y
-
-select :: Parser (Either a b) -> Parser (a -> b) -> Parser b
-select p q = branch p q (pure id)
-
-infixl 4 >?>
-(>?>) :: Parser a -> (a -> Bool) -> Parser a
-p >?> f = select (g <$> p) empty
-  where
-    g x = if f x then Right x else Left ()
 
 parseRange :: Parser CharClass
 parseRange = do
@@ -116,12 +56,6 @@ parseClassMember = parseRange <|> parseMetaChar <|> (Restricted . pure) <$> none
   -> String
   -> r
 )-}
-
-option :: Parser a -> a -> Parser a
-option p x = p <|> pure x
-
-maybeP :: (a -> b) -> b -> Parser a -> Parser b
-maybeP f x p = option (f <$> p) x
 
 parseCharacterClass :: Parser Atom
 parseCharacterClass =
