@@ -57,7 +57,7 @@ noneOf :: [Char] -> Parser Char
 noneOf cs = satisfy (not . flip elem cs)
 
 char :: Char -> Parser Char
-char c = satisfy (== c) -- anyChar >?> (== c)
+char c = satisfy (== c) 
 
 string :: String -> Parser String
 string = traverse char
