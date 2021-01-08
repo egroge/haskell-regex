@@ -1,4 +1,4 @@
-module ParseTests (regexTests) where
+module ParseTests (parseTests) where
 
 import Parser.Parser
 import ParseRegex
@@ -51,7 +51,7 @@ parseRegexTest = TestCase (assertEqual "parseRegexTest failed" expected (parseRe
   where 
     expected = Just [TAtom (C 'a'), TOp (CClass False (Restricted "012")) Plus]
 
-regexTests = test [
+parseTests = test [
     parseRangeTest, 
     parseClassMemberTest1, 
     parseClassMemberTest2, 
