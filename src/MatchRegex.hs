@@ -21,10 +21,9 @@ matchCharacterClass _ _
 matchAtom :: Atom -> String -> Maybe (String, String)
 matchAtom a@(C _) str           = matchCharacter a str
 matchAtom a@(CClass _ _) str    = matchCharacterClass a str
-matchAtom (Sub expr) ('(' : cs) = case matchExpression expr cs of 
-                                    Just (matched, ')' : rem) -> Just (matched, rem)
-                                    other                     -> other
-matchAtom _ _                   = Nothing
+matchAtom (Sub expr) cs = case matchExpression expr cs of 
+                                    Just (matched, rem) -> Just (matched, rem)
+                                    other               -> other
 
 matchOp :: Term -> String -> Maybe (String, String)
 matchOp (TOp a Optional) s 

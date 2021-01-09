@@ -3,6 +3,7 @@ module MatchTests (matchTests) where
 import ParseRegex
 import MatchRegex
 import Test.HUnit
+import Data.Maybe (fromJust)
 
 matchCharTest1 
   = TestCase (assertEqual "charTest1 failed" (Just ("a", "pple")) (matchCharacter (C 'a') "apple"))
@@ -41,9 +42,16 @@ matchAtomTest2
     a = CClass False (Restricted allowed)
 
 matchAtomTest3
-  = TestCase (assertEqual "atomTest3 failed" (Just ("car", "us")) (matchAtom a "(car)us"))
+  = TestCase (assertEqual "atomTest3 failed" (Just ("car", "us")) (matchAtom a "carus"))
   where 
     a = Sub [TAtom (C 'c'), TAtom (C 'a'), TAtom (C 'r')]
+
+subOpTest1 
+  = TestCase (assertEqual "subOpTest1 failed" 
+               (Just ("I am very hungry", " now"))
+               (matchExpression expr "I am very hungry now"))
+  where 
+    expr = fromJust $ parseRegex "I am (very)* hungry"
 
 plusOpTest1
   = TestCase (assertEqual "plus1 test failed" (Just ("aa", "b")) (matchOp op "aab"))
@@ -128,5 +136,6 @@ matchTests = test [
     exprTest1,
     exprTest2,
     findTest1,
-    findTest2
+    findTest2,
+    subOpTest1
   ]
